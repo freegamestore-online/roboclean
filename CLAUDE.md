@@ -7,4 +7,6 @@ A programming game where you code a robot vacuum to clean rooms on FreeGameStore
 - Build: `pnpm build`
 - Deploy: `git push origin main`
 
-Free, MIT-licensed, no tracking.
+Free, MIT-licensed, no tracking. For platform conventions, read
+https://freegamestore.online/skills.md
+before writing or changing anything.

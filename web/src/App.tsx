@@ -272,6 +272,20 @@ export default function App() {
 
         <div style={{ flex: 1 }} />
 
+        <a
+          href="https://freegamestore.online"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            fontSize: 12,
+            color: "var(--muted)",
+            textDecoration: "none",
+            marginRight: 8,
+          }}
+        >
+          FreeGameStore
+        </a>
+
         <button
           onClick={() => setShowLevels(true)}
           style={{
