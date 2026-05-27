@@ -1,0 +1,14 @@
+{
+  "name": "roboclean",
+  "private": true,
+  "packageManager": "pnpm@10.30.3",
+  "engines": { "node": ">=22" },
+  "pnpm": { "onlyBuiltDependencies": ["esbuild"] },
+  "scripts": {
+    "dev": "pnpm --filter @roboclean/web dev",
+    "build": "pnpm --filter @roboclean/web build",
+    "preview": "pnpm --filter @roboclean/web preview",
+    "typecheck": "pnpm --filter @roboclean/web exec tsc -b",
+    "test": "pnpm --filter @roboclean/web test"
+  }
+}

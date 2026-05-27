@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b7280;
+  --line: #e5e7eb;
+  --line-strong: #d1d5db;
+  --panel: #f9fafb;
+
+  --success: #059669;
+  --warning: #d97706;
+  --error: #dc2626;
+
+  --accent: #059669;
+
+  font-family: "Manrope", system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0f0f0f;
+    --ink: #f5f5f5;
+    --muted: #9ca3af;
+    --line: #2d2d2d;
+    --line-strong: #404040;
+    --panel: #1a1a1a;
+
+    --success: #10b981;
+    --warning: #fbbf24;
+    --error: #ef4444;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.code-editor {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  tab-size: 2;
+}
+
+.code-editor:focus {
+  outline: none;
+}
+
+.grid-cell {
+  transition: background-color 0.2s ease;
+}
+
+.robot-animate {
+  transition: top 0.25s ease, left 0.25s ease;
+}
+
+@keyframes sweep {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(15deg); }
+  50% { transform: rotate(0deg); }
+  75% { transform: rotate(-15deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.vacuum-sweep {
+  animation: sweep 0.3s ease;
+}
