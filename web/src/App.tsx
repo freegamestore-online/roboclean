@@ -1,3 +1,4 @@
+import { GameShell, GameTopbar, GameButton } from "@freegamestore/games";
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import type { ExecutionStep } from "./types";
 import { levels, SANDBOX_LEVEL_ID, createSandboxLevel, defaultSandboxGrid } from "./engine/levels";
@@ -55,7 +56,7 @@ function computeStars(moves: number, threeStarMoves: number, twoStarMoves: numbe
   return 1;
 }
 
-export default function App() {
+function GameContent() {
   const [levelId, setLevelId] = useState(1);
   const [code, setCode] = useState(STARTER_CODE[1] ?? "");
   const [steps, setSteps] = useState<ExecutionStep[]>([]);
@@ -238,70 +239,15 @@ export default function App() {
   return (
     <div
       style={{
-        height: "100dvh",
+        height: "100%",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
       }}
     >
-      {/* Header */}
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "8px 16px",
-          borderBottom: "1px solid var(--line)",
-          background: "var(--panel)",
-          gap: 12,
-          flexShrink: 0,
-        }}
-      >
-        <h1
-          style={{
-            margin: 0,
-            fontSize: 20,
-            fontWeight: 800,
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          <span>{"🧹"}</span>
-          <span>RoboClean</span>
-        </h1>
-
-        <div style={{ flex: 1 }} />
-
-        <a
-          href="https://freegamestore.online"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            fontSize: 12,
-            color: "var(--muted)",
-            textDecoration: "none",
-            marginRight: 8,
-          }}
-        >
-          FreeGameStore
-        </a>
-
-        <button
-          onClick={() => setShowLevels(true)}
-          style={{
-            padding: "4px 12px",
-            borderRadius: 6,
-            border: "1px solid var(--line-strong)",
-            background: "var(--paper)",
-            color: "var(--ink)",
-            fontWeight: 600,
-            fontSize: 13,
-            cursor: "pointer",
-          }}
-        >
-          Levels
-        </button>
-      </header>
+      <div className="shrink-0">
+        <GameTopbar title="RoboClean" actions={<GameButton size="sm" variant="ghost" onClick={() => setShowLevels(true)}>Levels</GameButton>} />
+      </div>
 
       {/* Level info bar */}
       <div
@@ -442,4 +388,8 @@ export default function App() {
       )}
     </div>
   );
+}
+
+export default function App() {
+  return <GameShell><GameContent /></GameShell>;
 }
