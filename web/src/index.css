@@ -68,3 +68,6 @@ body {
 .vacuum-sweep {
   animation: sweep 0.3s ease;
 }
+
+/* Legacy game components share the canonical paper surface. */
+:root { --bg: var(--paper); }
