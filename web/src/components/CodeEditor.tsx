@@ -12,11 +12,17 @@ interface CodeEditorProps {
 
 // --- Syntax highlighting ---
 
-const KEYWORDS = /\b(while|if|repeat)\b/g;
-const COMMANDS = /\b(move|vacuum|turnLeft|turnRight|turnAround|collect)\b/g;
-const SENSORS = /\b(dirty|wallAhead|garbageHere|roomClean)\b/g;
-const NUMBERS = /\b(\d+)\b/g;
-const PUNCTUATION = /([(){}!])/g;
+// One pass over the escaped line, so no rule can match markup another rule
+// inserted. Group order = colour order below.
+const TOKENS =
+  /\b(while|if|repeat)\b|\b(move|vacuum|turnLeft|turnRight|turnAround|collect)\b|\b(dirty|wallAhead|garbageHere|roomClean)\b|\b(\d+)\b|([(){}!])/g;
+const TOKEN_COLORS = [
+  "#c678dd", // keywords: purple
+  "#61afef", // commands: blue
+  "#e5c07b", // sensors: yellow
+  "#d19a66", // numbers: orange
+  "#abb2bf", // punctuation: grey
+];
 
 function escapeHtml(text: string): string {
   return text
@@ -25,7 +31,7 @@ function escapeHtml(text: string): string {
     .replace(/>/g, "&gt;");
 }
 
-function highlightCode(code: string): string {
+export function highlightCode(code: string): string {
   return code
     .split("\n")
     .map((rawLine) => {
@@ -47,14 +53,11 @@ function highlightCode(code: string): string {
 }
 
 function highlightExpression(line: string): string {
-  // Tokenize by splitting on word boundaries and punctuation
-  // Process in order: keywords, commands, sensors, numbers, punctuation
-  return line
-    .replace(KEYWORDS, '<span style="color:#c678dd">$1</span>')
-    .replace(COMMANDS, '<span style="color:#61afef">$1</span>')
-    .replace(SENSORS, '<span style="color:#e5c07b">$1</span>')
-    .replace(NUMBERS, '<span style="color:#d19a66">$1</span>')
-    .replace(PUNCTUATION, '<span style="color:#abb2bf">$1</span>');
+  return line.replace(TOKENS, (match, ...groups: unknown[]) => {
+    // Exactly one capture group matched; its index picks the colour.
+    const i = groups.findIndex((g) => g !== undefined);
+    return `<span style="color:${TOKEN_COLORS[i]}">${match}</span>`;
+  });
 }
 
 export default function CodeEditor({
