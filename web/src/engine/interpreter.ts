@@ -15,6 +15,9 @@ const TURN_RIGHT: Record<Direction, Direction> = {
 };
 
 const MAX_STEPS = 500;
+// Caps loop passes that record no steps (e.g. an empty or condition-only
+// repeat body), which MAX_STEPS alone would never stop
+const MAX_LOOP_PASSES = 100_000;
 
 interface Token {
   type: "command" | "number" | "lparen" | "rparen" | "lbrace" | "rbrace" | "keyword" | "not" | "comma";
@@ -170,6 +173,7 @@ export function execute(code: string, level: Level): { steps: ExecutionStep[]; e
   }
 
   const steps: ExecutionStep[] = [];
+  let loopPasses = 0;
   const grid = cloneGrid(level.grid);
   const state: RobotState = {
     position: { ...level.start },
@@ -284,6 +288,10 @@ export function execute(code: string, level: Level): { steps: ExecutionStep[]; e
         case "repeat": {
           const count = node.args?.[0] ?? 2;
           for (let i = 0; i < count; i++) {
+            if (++loopPasses > MAX_LOOP_PASSES) {
+              state.error = "Infinite loop detected!";
+              return false;
+            }
             if (!run(node.body ?? [])) return false;
           }
           break;

@@ -669,6 +669,18 @@ describe("Infinite loop protection", () => {
     // Should not exceed MAX_STEPS (500) snapshots
     expect(r.steps.length).toBeLessThanOrEqual(502);
   });
+
+  it("repeats that record no steps stop instead of hanging", () => {
+    const level = makeLevel([
+      [W, W, W, W, W],
+      [W, D, C, C, W],
+      [W, W, W, W, W],
+    ]);
+    expect(execute("repeat(1000000000) { }", level).error).toContain("Infinite loop");
+    // The body only checks a sensor, so it never records a step either
+    const nested = "repeat(100000) { repeat(100000) { if (roomClean()) { vacuum() } } }";
+    expect(execute(nested, level).error).toContain("Infinite loop");
+  });
 });
 
 /* ================================================================

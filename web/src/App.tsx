@@ -103,6 +103,7 @@ function GameContent() {
   const [isSandboxEditing, setIsSandboxEditing] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const completeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Read by the running animation so speed changes apply mid-run
   const speedRef = useRef(speed);
   useEffect(() => {
@@ -140,6 +141,7 @@ function GameContent() {
   useEffect(() => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
+      if (completeTimerRef.current) clearTimeout(completeTimerRef.current);
     };
   }, []);
 
@@ -147,6 +149,11 @@ function GameContent() {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
+    }
+    // A pending success modal belongs to the run being cleared
+    if (completeTimerRef.current) {
+      clearTimeout(completeTimerRef.current);
+      completeTimerRef.current = null;
     }
     setIsRunning(false);
   }, []);
@@ -207,7 +214,7 @@ function GameContent() {
           return prev;
         });
         playLevelUp();
-        setTimeout(() => setShowComplete(true), 400);
+        completeTimerRef.current = setTimeout(() => setShowComplete(true), 400);
       } else {
         setIsError(true);
         setIsSuccess(false);
