@@ -38,18 +38,20 @@ export default function RoomGrid({ level, robotPos, robotDir, currentGrid }: Roo
     return set;
   }, [level.grid, currentGrid, rows, cols]);
 
-  // Cell size adapts to grid dimensions
+  // Cell size adapts to grid dimensions, shrinking further to fit the
+  // stage (the parent is a size container) on small screens
   const maxCellSize = 56;
   const minCellSize = 32;
-  const cellSize = Math.max(minCellSize, Math.min(maxCellSize, Math.floor(480 / Math.max(rows, cols))));
-  const fontSize = Math.max(12, Math.floor(cellSize * 0.45));
+  const preferredCellSize = Math.max(minCellSize, Math.min(maxCellSize, Math.floor(480 / Math.max(rows, cols))));
+  const cellSize = `min(${preferredCellSize}px, calc((100cqw - ${cols - 1}px) / ${cols}), calc((100cqh - ${rows - 1}px) / ${rows}))`;
+  const fontSize = (scale: number) => `calc(${cellSize} * 0.45 * ${scale})`;
 
   return (
     <div
       style={{
         display: "inline-grid",
-        gridTemplateRows: `repeat(${rows}, ${cellSize}px)`,
-        gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`,
+        gridTemplateRows: `repeat(${rows}, ${cellSize})`,
+        gridTemplateColumns: `repeat(${cols}, ${cellSize})`,
         gap: "1px",
         background: "var(--line-strong)",
         borderRadius: "8px",
@@ -79,31 +81,31 @@ export default function RoomGrid({ level, robotPos, robotDir, currentGrid }: Roo
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize,
+                fontSize: fontSize(1),
                 position: "relative",
                 userSelect: "none",
               }}
             >
               {/* Dirty dot pattern */}
               {cell === "floor_dirty" && !isRobot && (
-                <span style={{ color: "#a08b6b", fontSize: fontSize * 0.8, opacity: 0.6 }}>
+                <span style={{ color: "#a08b6b", fontSize: fontSize(0.8), opacity: 0.6 }}>
                   {"..."}
                 </span>
               )}
 
               {/* Furniture emoji */}
               {cell === "furniture" && (
-                <span style={{ fontSize: fontSize * 1.2 }}>{display.emoji}</span>
+                <span style={{ fontSize: fontSize(1.2) }}>{display.emoji}</span>
               )}
 
               {/* Garbage emoji */}
               {cell === "garbage" && (
-                <span style={{ fontSize: fontSize * 1.2 }}>{display.emoji}</span>
+                <span style={{ fontSize: fontSize(1.2) }}>{display.emoji}</span>
               )}
 
               {/* Cleaned trail marker */}
               {wasCleaned && cell === "floor_clean" && !isRobot && (
-                <span style={{ color: "#059669", fontSize: fontSize * 0.5, opacity: 0.35 }}>
+                <span style={{ color: "#059669", fontSize: fontSize(0.5), opacity: 0.35 }}>
                   {"✓"}
                 </span>
               )}
@@ -122,12 +124,12 @@ export default function RoomGrid({ level, robotPos, robotDir, currentGrid }: Roo
                     zIndex: 2,
                   }}
                 >
-                  <span style={{ fontSize: fontSize * 1.1, lineHeight: 1 }}>
+                  <span style={{ fontSize: fontSize(1.1), lineHeight: 1 }}>
                     {"🤖"}
                   </span>
                   <span
                     style={{
-                      fontSize: fontSize * 0.7,
+                      fontSize: fontSize(0.7),
                       fontWeight: 700,
                       color: "#059669",
                       marginTop: -2,

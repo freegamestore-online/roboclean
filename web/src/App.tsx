@@ -1,4 +1,4 @@
-import { GameShell, GameTopbar, GameButton } from "@freegamestore/games";
+import { GameShell, GameTopbar, GameButton, useGameSounds } from "@freegamestore/games";
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import type { ExecutionStep } from "./types";
 import { levels, SANDBOX_LEVEL_ID, createSandboxLevel, defaultSandboxGrid } from "./engine/levels";
@@ -24,6 +24,7 @@ const STARTER_CODE: Record<number, string> = {
   10: "// Use if (dirty()) and if (garbageHere())\n",
   11: "// Two rooms — clean both!\n",
   12: "// Right-hand rule: always try right first\n",
+  [SANDBOX_LEVEL_ID]: "// Sandbox mode — experiment freely!\n",
 };
 
 function loadCompleted(): Set<number> {
@@ -50,6 +51,33 @@ function saveStars(map: Record<number, number>) {
   localStorage.setItem("roboclean_stars", JSON.stringify(map));
 }
 
+function loadSavedCode(): Record<number, string> {
+  try {
+    const raw = localStorage.getItem("roboclean_code");
+    if (raw) return JSON.parse(raw) as Record<number, string>;
+  } catch { /* ignore */ }
+  return {};
+}
+
+function loadCode(levelId: number): string {
+  return loadSavedCode()[levelId] ?? STARTER_CODE[levelId] ?? "";
+}
+
+function saveCode(levelId: number, code: string) {
+  try {
+    localStorage.setItem("roboclean_code", JSON.stringify({ ...loadSavedCode(), [levelId]: code }));
+    localStorage.setItem("roboclean_level", String(levelId));
+  } catch { /* ignore */ }
+}
+
+function loadLevel(): number {
+  try {
+    const id = Number(localStorage.getItem("roboclean_level"));
+    if (id === SANDBOX_LEVEL_ID || levels.some((l) => l.id === id)) return id;
+  } catch { /* ignore */ }
+  return 1;
+}
+
 function computeStars(moves: number, threeStarMoves: number, twoStarMoves: number): number {
   if (moves <= threeStarMoves) return 3;
   if (moves <= twoStarMoves) return 2;
@@ -57,8 +85,9 @@ function computeStars(moves: number, threeStarMoves: number, twoStarMoves: numbe
 }
 
 function GameContent() {
-  const [levelId, setLevelId] = useState(1);
-  const [code, setCode] = useState(STARTER_CODE[1] ?? "");
+  const { playTick, playError, playLevelUp } = useGameSounds();
+  const [levelId, setLevelId] = useState(loadLevel);
+  const [code, setCode] = useState(() => loadCode(levelId));
   const [steps, setSteps] = useState<ExecutionStep[]>([]);
   const [stepIndex, setStepIndex] = useState(-1);
   const [isRunning, setIsRunning] = useState(false);
@@ -73,7 +102,12 @@ function GameContent() {
   const [sandboxGrid, setSandboxGrid] = useState(defaultSandboxGrid);
   const [isSandboxEditing, setIsSandboxEditing] = useState(false);
 
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Read by the running animation so speed changes apply mid-run
+  const speedRef = useRef(speed);
+  useEffect(() => {
+    speedRef.current = speed;
+  }, [speed]);
 
   const level = useMemo(
     () =>
@@ -90,19 +124,28 @@ function GameContent() {
   const displayDir = currentStep ? currentStep.state.direction : level.startDirection;
   const activeLine = currentStep ? currentStep.lineNumber : 0;
 
+  useEffect(() => {
+    saveCode(levelId, code);
+  }, [levelId, code]);
+
+  // Tick on every animated or manual step
+  useEffect(() => {
+    if (stepIndex > 0) playTick();
+  }, [stepIndex]);
+
   // Can we step forward?
   const canStep = steps.length > 0 && stepIndex < steps.length - 1;
 
   // Cleanup timer on unmount
   useEffect(() => {
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
 
   const clearRunning = useCallback(() => {
     if (timerRef.current) {
-      clearInterval(timerRef.current);
+      clearTimeout(timerRef.current);
       timerRef.current = null;
     }
     setIsRunning(false);
@@ -122,11 +165,7 @@ function GameContent() {
     (id: number) => {
       clearRunning();
       setLevelId(id);
-      setCode(
-        id === SANDBOX_LEVEL_ID
-          ? "// Sandbox mode — experiment freely!\n"
-          : STARTER_CODE[id] ?? "",
-      );
+      setCode(loadCode(id));
       setSteps([]);
       setStepIndex(-1);
       setMessage("");
@@ -167,13 +206,15 @@ function GameContent() {
           }
           return prev;
         });
+        playLevelUp();
         setTimeout(() => setShowComplete(true), 400);
       } else {
         setIsError(true);
         setIsSuccess(false);
+        playError();
       }
     },
-    [level],
+    [level, playError, playLevelUp],
   );
 
   const handleRun = useCallback(() => {
@@ -187,6 +228,7 @@ function GameContent() {
       setStepIndex(0);
       setMessage(error);
       setIsError(true);
+      playError();
       return;
     }
 
@@ -195,7 +237,7 @@ function GameContent() {
     let idx = 0;
     setStepIndex(0);
 
-    timerRef.current = setInterval(() => {
+    const tick = () => {
       idx++;
       if (idx >= execSteps.length) {
         clearRunning();
@@ -204,8 +246,10 @@ function GameContent() {
         return;
       }
       setStepIndex(idx);
-    }, speed);
-  }, [code, level, speed, handleReset, clearRunning, finishExecution]);
+      timerRef.current = setTimeout(tick, speedRef.current);
+    };
+    timerRef.current = setTimeout(tick, speedRef.current);
+  }, [code, level, handleReset, clearRunning, finishExecution, playError]);
 
   const handleStep = useCallback(() => {
     if (steps.length === 0) {
@@ -216,6 +260,7 @@ function GameContent() {
       if (error && execSteps.length <= 1) {
         setMessage(error);
         setIsError(true);
+        playError();
       }
       return;
     }
@@ -227,7 +272,7 @@ function GameContent() {
         finishExecution(steps);
       }
     }
-  }, [steps, stepIndex, code, level, finishExecution]);
+  }, [steps, stepIndex, code, level, finishExecution, playError]);
 
   // Win modal data
   const lastStep = steps.length > 0 ? steps[steps.length - 1] : null;
@@ -259,6 +304,8 @@ function GameContent() {
           gap: 12,
           fontSize: 13,
           flexShrink: 0,
+          flexWrap: "wrap",
+          rowGap: 2,
         }}
       >
         <span style={{ fontWeight: 700, color: "var(--accent)" }}>
@@ -278,26 +325,12 @@ function GameContent() {
         </span>
       </div>
 
-      {/* Main split layout */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          minHeight: 0,
-          overflow: "hidden",
-        }}
-      >
-        {/* Left: Grid view */}
+      {/* Stacked on phones (stage on top), side by side from md up */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
+        {/* Grid view — a size container so the room scales to fit */}
         <div
-          style={{
-            flex: "0 0 60%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 16,
-            overflow: "auto",
-            background: "var(--paper)",
-          }}
+          className="flex shrink-0 basis-[45%] items-center justify-center overflow-hidden p-3 [container-type:size] md:basis-[60%] md:p-4"
+          style={{ background: "var(--paper)" }}
         >
           <RoomGrid
             level={level}
@@ -307,18 +340,9 @@ function GameContent() {
           />
         </div>
 
-        {/* Right: Editor + Controls */}
+        {/* Editor + Controls */}
         <div
-          style={{
-            flex: "0 0 40%",
-            display: "flex",
-            flexDirection: "column",
-            borderLeft: "1px solid var(--line)",
-            padding: 12,
-            gap: 10,
-            minHeight: 0,
-            overflow: "hidden",
-          }}
+          className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto border-t border-[var(--line)] p-3 md:border-t-0 md:border-l"
         >
           <GameControls
             onRun={handleRun}
