@@ -133,13 +133,13 @@ export default function GameControls({
                 ? "rgba(5, 150, 105, 0.1)"
                 : "var(--panel)",
             color: isError
-              ? "var(--error)"
+              ? "var(--danger)"
               : isSuccess
                 ? "var(--success)"
                 : "var(--ink)",
             border: `1px solid ${
               isError
-                ? "var(--error)"
+                ? "var(--danger)"
                 : isSuccess
                   ? "var(--success)"
                   : "var(--line)"

@@ -170,22 +170,16 @@ function GameContent() {
 
   const handleSelectLevel = useCallback(
     (id: number) => {
-      clearRunning();
+      handleReset();
       setLevelId(id);
       setCode(loadCode(id));
-      setSteps([]);
-      setStepIndex(-1);
-      setMessage("");
-      setIsError(false);
-      setIsSuccess(false);
-      setShowComplete(false);
       setShowLevels(false);
       if (id === SANDBOX_LEVEL_ID) {
         setSandboxGrid(defaultSandboxGrid());
         setIsSandboxEditing(false);
       }
     },
-    [clearRunning],
+    [handleReset],
   );
 
   const finishExecution = useCallback(
@@ -198,21 +192,14 @@ function GameContent() {
         setIsSuccess(true);
         setIsError(false);
         const stars = computeStars(lastStep.state.moveCount, level.threeStarMoves, level.twoStarMoves);
-        setCompletedLevels((prev) => {
-          const next = new Set(prev);
-          next.add(level.id);
-          saveCompleted(next);
-          return next;
-        });
-        setStarRatings((prev) => {
-          const existing = prev[level.id] ?? 0;
-          if (stars > existing) {
-            const next = { ...prev, [level.id]: stars };
-            saveStars(next);
-            return next;
-          }
-          return prev;
-        });
+        const completed = new Set(completedLevels).add(level.id);
+        saveCompleted(completed);
+        setCompletedLevels(completed);
+        if (stars > (starRatings[level.id] ?? 0)) {
+          const ratings = { ...starRatings, [level.id]: stars };
+          saveStars(ratings);
+          setStarRatings(ratings);
+        }
         playLevelUp();
         completeTimerRef.current = setTimeout(() => setShowComplete(true), 400);
       } else {
@@ -221,7 +208,7 @@ function GameContent() {
         playError();
       }
     },
-    [level, playError, playLevelUp],
+    [level, completedLevels, starRatings, playError, playLevelUp],
   );
 
   const handleRun = useCallback(() => {

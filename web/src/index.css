@@ -10,7 +10,7 @@
 
   --success: #059669;
   --warning: #d97706;
-  --error: #dc2626;
+  --danger: #dc2626;
 
   --accent: #059669;
 
@@ -28,7 +28,7 @@
 
     --success: #10b981;
     --warning: #fbbf24;
-    --error: #ef4444;
+    --danger: #ef4444;
   }
 }
 
